@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+
+	<!-- 不用重启服务器 -->
+	<constant name="struts.i18n.reload" value="true" />
+	<constant name="struts.configuration.xml.reload" value="true" />
+	<!-- 表单样式 -->
+	<constant name="struts.ui.theme" value="simple" />
+	<!-- 国际化文件 -->
+	<constant name="struts.custom.i18n.resources" value="messages" />
+	<!-- 动态方法调用 -->
+	<constant name="struts.enable.DynamicMethodInvocation" value="true" />
+
+	<package name="default" namespace="/" extends="json-default">
+		<action name="estore_login" class="userinfologin" method="login">
+			<result name="input">/login.jsp</result>
+			<result>/jsps/main.jsp</result>
+		</action>
+
+		<action name="store_*" class="storeAction" method="{1}">
+			<result name="addsuccess" type="redirectAction">store_list</result>
+			<result name="listsuccess">/jsps/store/store.jsp</result>
+			<result name="beforeUpdateSuccess">
+				/jsps/store/edit.jsp
+			</result>
+			<result name="input">/jsps/store/add.jsp</result>
+		</action>
+
+		<action name="goods_*" class="goodsAction" method="{1}">
+			<result name="savesuccess" type="redirectAction">
+				goods_list
+			</result>
+			<result name="findBynmOnly" type="json">
+				<param name="includeProperties">
+					id,name,unit,amount,nm,store\.id,store\.name
+				</param>
+			</result>
+			<result name="input">/jsps/out/out.jsp</result>
+			<result name="out" type="redirectAction">goods_list</result>
+			<result name="listsuccess">/jsps/store/remain.jsp</result>
+			<result name="historyList">/jsps/his/his.jsp</result>
+		</action>
+		<action name="history_*" class="historyAction" method="{1}">
+		<result name="paginationListSuccess">/jsps/his/his.jsp</result>
+		</action>
+	</package>
+
+</struts>

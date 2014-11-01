@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:cache="http://www.springframework.org/schema/cache" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd
+	http://www.springframework.org/schema/cache 
+	http://www.springframework.org/schema/cache/spring-cache.xsd
+	">
+	<!-- 引入外部属性文件 -->
+	<context:property-placeholder location="classpath:db.properties" />
+
+	<!-- 连接池 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${jdbc.url}" />
+		<property name="user" value="${jdbc.user}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<!-- sessionFactory -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<!-- 第一部分： 连接池 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 第二部分： hibernate常用属性 -->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.Oracle10gDialect</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<!-- <prop key="hibernate.connection.autocommit">true</prop> -->
+			</props>
+		</property>
+		<!-- 第三部分： 引入hbm -->
+		<!-- locations 引入 classpath: cn/itcast/domain/Book.hbm.xml resources 引入(classpath) 
+			cn/itcast/domain/Book.hbm.xml -->
+		<property name="mappingResources">
+			<list>
+				<value>cn/itcast/ssh/domain/Goods.hbm.xml</value>
+				<value>cn/itcast/ssh/domain/History.hbm.xml</value>
+				<value>cn/itcast/ssh/domain/Store.hbm.xml</value>
+				<value>cn/itcast/ssh/domain/Userinfo.hbm.xml</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 事务管理通知 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" read-only="false" />
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="add*" read-only="false" />
+			<tx:method name="delete*" read-only="false" />
+			<tx:method name="update*" read-only="false" />
+			<tx:method name="out*" read-only="false" />
+		</tx:attributes>
+	</tx:advice>
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 切入点和切面 -->
+	<aop:config proxy-target-class="true">
+		<aop:pointcut expression="bean(*ServiceImpl)" id="pointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut" />
+	</aop:config>
+
+	<!-- 配置userinfoDAOImpl -->
+	<bean id="userinfoDAOImpl" class="cn.itcast.ssh.dao.impl.UserinfoDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!-- 配置userinfoServiceImpl -->
+	<bean id="userinfoServiceImpl" class="cn.itcast.ssh.service.impl.UserinfoServiceImpl">
+		<property name="userinfoDAOImpl" ref="userinfoDAOImpl"></property>
+	</bean>
+
+	<!-- action配置 -->
+	<bean id="userinfologin" class="cn.itcast.ssh.web.action.LoginAction"
+		scope="prototype">
+		<property name="userinfoServiceImpl" ref="userinfoServiceImpl"></property>
+	</bean>
+
+	<!--配置storedaoimpl -->
+	<bean id="storeDAOImpl" class="cn.itcast.ssh.dao.impl.StoreDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!--配置storeServiceimpl -->
+	<bean id="storeServiceImpl" class="cn.itcast.ssh.service.impl.StoreServiceImpl">
+		<property name="storeDAOImpl" ref="storeDAOImpl"></property>
+	</bean>
+
+	<!--配置storeaction -->
+	<bean id="storeAction" class="cn.itcast.ssh.web.action.StoreAction"
+		scope="prototype">
+		<property name="storeServiceImpl" ref="storeServiceImpl"></property>
+	</bean>
+
+	<!--使用ehcache缓存 -->
+	<!--将ehcache的缓存管理器注入到spring的ehcache管理器中 -->
+	<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager"
+		p:cacheManager-ref="ehcache" />
+	<!-- Ehcache library setup -->
+	<!--获取ehcache的缓存管理器 -->
+	<bean id="ehcache"
+		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean"
+		p:configLocation="classpath:ehcache.xml" />
+
+	<bean id="goodsDAOImpl" class="cn.itcast.ssh.service.impl.GoodsDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<bean id="goodsServiceImpl" class="cn.itcast.ssh.service.impl.GoodsServiceImpl">
+		<property name="goodsDAOImpl" ref="goodsDAOImpl"></property>
+		<property name="historyDAOImpl" ref="historyDAOImpl"></property>
+	</bean>
+
+	<bean id="goodsAction" class="cn.itcast.ssh.web.action.GoodsAction"
+		scope="prototype">
+		<property name="goodsServiceImpl" ref="goodsServiceImpl"></property>
+	</bean>
+
+	<!--配置HistoryFactoryDAOImpl -->
+	<bean id="historyDAOImpl" class="cn.itcast.ssh.dao.impl.HistoryDAOImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!--配置historyFactoryServiceImpl -->
+	<bean id="historyServiceImpl" class="cn.itcast.ssh.web.action.HistoryServiceImpl">
+		<property name="historyDAOImpl" ref="historyDAOImpl"></property>
+	</bean>
+	<!--配置historyAction -->
+	<bean id="historyAction" class="cn.itcast.ssh.web.action.HistoryAction"
+		scope="prototype">
+		<property name="historyServiceImpl" ref="historyServiceImpl"></property>
+	</bean>
+	<cache:annotation-driven />
+
+</beans>
