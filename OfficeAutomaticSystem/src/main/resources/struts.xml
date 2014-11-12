@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+
+	<!-- 不用重启服务器 -->
+	<constant name="struts.i18n.reload" value="true" />
+	<constant name="struts.configuration.xml.reload" value="true" />
+	<!-- 表单样式 -->
+	<constant name="struts.ui.theme" value="simple" />
+	<!-- 国际化文件 -->
+	<constant name="struts.custom.i18n.resources" value="messages" />
+	<!-- 动态方法调用 -->
+	<constant name="struts.enable.DynamicMethodInvocation" value="true" />
+
+
+	<package name="default" namespace="/" extends="json-default">
+		<interceptors>
+
+			<interceptor name="myInterceptor"
+				class="com.junsoftware.web.interceptor.PrivilegeInterceptor">
+			</interceptor>
+
+			<interceptor-stack name="myStack">
+				<interceptor-ref name="myInterceptor">
+					<param name="excludeMethods">
+						login
+					</param>
+				</interceptor-ref>
+				<interceptor-ref name="defaultStack"></interceptor-ref>
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="myStack"></default-interceptor-ref>
+
+
+		<global-results>
+			<result name="toLoginUI">/jsps/System_User/loginUI.jsp</result>
+			<result name="noPrivilege">/jsps/Globals/noPrivilege.jsp</result>
+		</global-results>
+
+		<!--角色的action -->
+		<action name="role_*" class="roleAction" method="{1}">
+			<result name="list">/jsps/System_Role/list.jsp</result>
+			<result name="toList" type="redirectAction">
+				<param name="namespace">/</param>
+				<param name="actionName">role_list</param>
+			</result>
+			<result name="toUpdateUI">/jsps/System_Role/updateUI.jsp</result>
+			<result name="toPrivilegeUI">/jsps/System_Role/setPrivilegeUI.jsp</result>
+			<result name="json" type="json">
+				<param name="includeProperties">
+					\[\d+\]\.id,
+					\[\d+\]\.name,
+					\[\d+\]\.pId
+				</param>
+			</result>
+			<result name="toTempUI">/jsps/System_Role/temp.jsp</result>
+		</action>
+
+		<!--部门的action -->
+		<action name="department_*" class="departmentAction" method="{1}">
+			<result name="list">/jsps/System_Department/list.jsp</result>
+			<result name="toSaveUI">/jsps/System_Department/saveUI.jsp</result>
+			<result name="toList" type="redirectAction">department_list?parent.id=${parent.id}
+			</result>
+			<result name="toUpdateUI">/jsps/System_Department/updateUI.jsp</result>
+			<result name="listChain" type="chain">department_list</result>
+		</action>
+
+		<!--用户的action -->
+		<action name="user_*" class="userAction" method="{1}">
+			<result name="list">/jsps/System_User/list.jsp</result>
+			<result name="toSaveUI">/jsps/System_User/saveUI.jsp</result>
+			<result name="toList" type="redirectAction">user_list</result>
+			<result name="toUpdateUI">/jsps/System_User/updateUI.jsp</result>
+			<result name="logoutUI">/jsps/System_User/logoutUI.jsp</result>
+			<result name="loginUI">/jsps/System_User/loginUI.jsp</result>
+			<result name="toIndex" type="chain">home_index</result>
+		</action>
+
+		<!--主页专用的action -->
+		<action name="home_*" method="{1}" class="homeAction">
+			<result name="{1}">/jsps/home/{1}.jsp</result>
+		</action>
+
+		<!--forumManage的action -->
+		<action name="forumManage_*" class="forumManageAction" method="{1}">
+			<result name="list">/jsps/BBS_ForumManage/list.jsp</result>
+			<result name="toSaveUI">/jsps/BBS_ForumManage/saveUI.jsp</result>
+			<result name="toList" type="redirectAction">forumManage_list</result>
+			<result name="toUpdateUI">/jsps/BBS_ForumManage/updateUI.jsp</result>
+		</action>
+
+		<!--forum的action -->
+		<action name="forum_*" method="{1}" class="forumAction">
+			<result name="list">/jsps/BBS_Forum/forumList.jsp</result>
+			<result name="show">/jsps/BBS_Forum/forumShow.jsp</result>
+		</action>
+
+		<!--topic的action -->
+		<action name="topic_*" class="topicAction" method="{1}">
+			<result name="toSaveUI">/jsps/BBS_Topic/saveUI.jsp</result>
+			<result name="toShow" type="redirectAction">forum_show?id=${forum.id}</result>
+			<result name="show">/jsps/BBS_Topic/topicShow.jsp</result>
+		</action>
+		<action name="reply_*" method="{1}" class="replyAction">
+		<result name="toShow" type="redirectAction">topic_show?id=${topic.id}</result>
+		<result name="toSaveUI">/jsps/BBS_Reply/saveUI.jsp</result>
+		</action>
+	</package>
+
+</struts>
